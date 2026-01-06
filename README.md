@@ -69,7 +69,7 @@ graph TD
     style External_Systems fill:#f5f5f5,stroke:#666666,color:#000
   ```
 
-  To provide a clear, technical view of how the system handles a request from start to finish, the following sequence diagram traces the "Create Project" flow across all four architectural layers.
+  To provide a clear, technical view of how the system handles a request from start to finish, the following sequence diagram summurise the "Create Project" flow across all four architectural layers.
 
 ```mermaid
 sequenceDiagram
@@ -77,112 +77,46 @@ sequenceDiagram
     
     box "Frontend Layer" #dae8fc
         participant User
-        participant FE as Web Component<br/>(dop-integration-ikube2)
+        participant FE as Web Component
     end
 
     box "API Layer (Backend)" #d5e8d4
         participant APIGW as API Gateway
-        participant AUTH as Lambda Authorizer
         participant LAM_CREATE as Lambda<br/>(Create Service Instance)
     end
 
     box "Data Layer" #ffe6cc
-        participant DDB as DynamoDB<br/>(Service Instances)
+        participant DDB as DynamoDB
         participant STREAM as DynamoDB Stream
     end
 
     box "Orchestration Layer" #e1d5e7
         participant PIPE as EventBridge Pipe
-        participant SFN as Step Function<br/>(Lifecycle Engine)
-        participant LAM_SCO as Lambda<br/>(SCO Client)
+        participant SFN as Step Function
+        participant LAM_SCO as Lambda (SCO Client)
     end
 
-    box "External Systems" #f5f5f5
-        participant PUG as PUG API<br/>(Compliance)
-        participant SCO as SCO API<br/>(Orchestrator)
-    end
-
-    %% -- SYNC PHASE --
-    Note over User, DDB: Phase 1: Request Ingestion (Synchronous)
-    
-    User->>FE: Fill Form & Click "Create Project"
-    FE->>APIGW: PUT /v2/service_instances/:instance_id
-    
-    APIGW->>AUTH: Authenticate Request
-    AUTH-->>APIGW: Allow
-    
-    APIGW->>LAM_CREATE: Invoke Handler
+    User->>FE: Click "Create Project"
+    FE->>APIGW: PUT /v2/service_instances/:id
+    APIGW->>LAM_CREATE: Invoke
     
     activate LAM_CREATE
-    LAM_CREATE->>PUG: POST /check-compliance
-    PUG-->>LAM_CREATE: Compliance OK
-    
-    LAM_CREATE->>DDB: PutItem (State: READY_FOR_PROVISIONING)
-    activate DDB
-    DDB-->>LAM_CREATE: Success
-    deactivate DDB
-    
-    LAM_CREATE-->>APIGW: Response (202 Accepted)
+    Note right of LAM_CREATE: Validate Identity & PUG Compliance
+    LAM_CREATE->>DDB: PutItem (State: READY)
+    LAM_CREATE-->>APIGW: 202 Accepted
     deactivate LAM_CREATE
     
     APIGW-->>FE: 202 Accepted
-    FE-->>User: Show "READY_FOR_ACTIVATION"
-
-    %% -- ASYNC PHASE --
-    Note over DDB, SCO: Phase 2: Orchestration (Asynchronous)
-
-    DDB->>STREAM: Capture "INSERT/MODIFY" Event
-    activate STREAM
-    STREAM->>PIPE: Filter Event (State == READY)
-    deactivate STREAM
     
-    activate PIPE
-    PIPE->>SFN: Start Execution
-    deactivate PIPE
+    DDB->>STREAM: Item Change Event
+    STREAM->>PIPE: Filter (State == READY)
+    PIPE->>SFN: Trigger Provisioning Workflow
     
     activate SFN
-    SFN->>SFN: Determine Route (Provisioning)
-    
-    SFN->>LAM_SCO: Invoke: Create Project
-    activate LAM_SCO
-    LAM_SCO->>SCO: POST /projects (Create)
-    SCO-->>LAM_SCO: Project ID Returned
-    LAM_SCO-->>SFN: Task Success
-    deactivate LAM_SCO
-    
-    loop Polling / Wait
-        SFN->>LAM_SCO: Check Status
-        LAM_SCO->>SCO: GET /projects/:id/status
-        SCO-->>LAM_SCO: Status (e.g., Creating...)
-        LAM_SCO-->>SFN: Status
-    end
-    
-    SFN->>LAM_SCO: Final Configuration (IAM/Quotas)
-    activate LAM_SCO
-    LAM_SCO->>SCO: PUT /projects/:id (Config)
-    deactivate LAM_SCO
-
-    SFN->>DDB: UpdateItem (State: ACTIVE)
+    SFN->>LAM_SCO: Create Project in Kubermatic
+    LAM_SCO-->>SFN: Success
+    SFN->>DDB: Update State to ACTIVE
     deactivate SFN
-    
-    Note over User, DDB: Phase 3: Completion
-    
-    FE->>APIGW: GET /v2/service_instances/:last_operation
-    APIGW->>DDB: Read State
-    DDB-->>FE: State: ACTIVE
-    FE-->>User: Show "Active" Dashboard
-
   ```
-
-
-Technology Stack :
-
-Frontend: Lit (Web Components), TypeScript, RXJS, @swisscom/sdx (Swisscom UI kit).
-
-Backend: Node.js 22.x, AWS Lambda, Amazon API Gateway.
-
-Orchestration: AWS Step Functions (Standard Workflows), EventBridge Pipes.
-
-Infrastructure: AWS CDK (Cloud Development Kit) in TypeScript.
 
 
