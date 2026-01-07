@@ -132,11 +132,11 @@ This frontend is not a standalone website but a micro-frontend plugin that lives
 ```mermaid
 graph LR
     %% -- Styles --
-    classDef host fill:#f0f4f8,stroke:#4a4a4a,stroke-width:2px,stroke-dasharray: 4 4,color:#333,stroke-linecap:round;
-    classDef plugin fill:#d0e8ff,stroke:#1976d2,stroke-width:2px,color:#0d47a1,stroke-linecap:round;
-    classDef component fill:#ffffff,stroke:#1976d2,stroke-width:1.5px,color:#000,stroke-linecap:round,stroke-shadow: 2px 2px 4px #aaa;
-    classDef service fill:#fff8e1,stroke:#ff9800,stroke-width:1.5px,color:#000,stroke-linecap:round,stroke-shadow: 2px 2px 4px #bbb;
-    classDef cloud fill:#e0f7e9,stroke:#388e3c,stroke-width:2px,color:#000,stroke-linecap:round,stroke-shadow: 2px 2px 5px #999;
+    classDef host fill:#f9fafb,stroke:#6b7280,stroke-width:2px,stroke-dasharray: 4 2,color:#374151,stroke-linecap:round,stroke-radius:10px;
+    classDef plugin fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#0369a1,stroke-linecap:round,stroke-radius:10px;
+    classDef component fill:#ffffff,stroke:#0284c7,stroke-width:1.5px,color:#111827,stroke-linecap:round,stroke-radius:8px,stroke-shadow:2px 2px 6px #cbd5e1;
+    classDef service fill:#fff7ed,stroke:#f97316,stroke-width:1.5px,color:#1f2937,stroke-linecap:round,stroke-radius:8px,stroke-shadow:2px 2px 6px #fde8dc;
+    classDef cloud fill:#dcfce7,stroke:#16a34a,stroke-width:2px,color:#14532d,stroke-linecap:round,stroke-radius:10px,stroke-shadow:2px 2px 6px #a7f3d0;
 
     %% -- The Browser Environment --
     subgraph Browser_Window [User Browser]
@@ -199,5 +199,7 @@ graph LR
     class Our_Plugin plugin;
     class AWS_Cloud cloud;
   ```
+
+
 
 
