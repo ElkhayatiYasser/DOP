@@ -119,4 +119,85 @@ sequenceDiagram
     deactivate SFN
   ```
 
+The Frontend Layer: The User Interface
+
+   1. Overview
+      
+The frontend is a client-side application implemented with Native Web Components and delivered as a single JavaScript bundle built via Rollup, which is loaded dynamically by the Swisscom DevOps Portal at runtime. Running entirely in the user’s browser, it communicates directly with the API layer and follows a Single Page Application (SPA) architecture. Its primary responsibilities include handling user interactions, performing form validation, and presenting the Service Catalog in a responsive and user-friendly manner.
+
+   2. Architecture & Key Concepts
+
+This frontend is not a standalone website but a micro-frontend plugin that lives inside the Swisscom DevOps Portal.Here is the high-level map of how the frontend is wired. 
+
+```mermaid
+graph LR
+    %% -- Styles --
+    classDef host fill:#f0f4f8,stroke:#4a4a4a,stroke-width:2px,stroke-dasharray: 4 4,color:#333,stroke-linecap:round;
+    classDef plugin fill:#d0e8ff,stroke:#1976d2,stroke-width:2px,color:#0d47a1,stroke-linecap:round;
+    classDef component fill:#ffffff,stroke:#1976d2,stroke-width:1.5px,color:#000,stroke-linecap:round,stroke-shadow: 2px 2px 4px #aaa;
+    classDef service fill:#fff8e1,stroke:#ff9800,stroke-width:1.5px,color:#000,stroke-linecap:round,stroke-shadow: 2px 2px 4px #bbb;
+    classDef cloud fill:#e0f7e9,stroke:#388e3c,stroke-width:2px,color:#000,stroke-linecap:round,stroke-shadow: 2px 2px 5px #999;
+
+    %% -- The Browser Environment --
+    subgraph Browser_Window [User Browser]
+        direction TB
+
+        %% 1. The Host App
+        subgraph DOP_Host [Swisscom DevOps Portal]
+            direction TB
+            Host_Nav[Global Navigation]
+            Host_Context[User Context]
+        end
+
+        %% 2. Our Plugin
+        subgraph Our_Plugin [iKube Plugin Container]
+            direction TB
+            
+            %% Entry Point
+            Entry[Entry Component]:::component
+
+            %% The Logic Core
+            subgraph Core_Logic [Core Logic]
+                Router[Router Service]:::service
+                Services[Backend Service]:::service
+                Bridge[DOP Service]:::service
+            end
+
+            %% The UI Pages
+            subgraph Views [UI Pages]
+                Page_List[Landing Page]:::component
+                Page_Create[Create Wizard]:::component
+            end
+        end
+    end
+
+    %% -- The Outside World --
+    subgraph AWS_Cloud [AWS Backend]
+        API_GW[API Gateway]:::cloud
+    end
+
+    %% -- Wiring It All Together --
+    
+    %% Host loads Plugin
+    DOP_Host -->|1. Load Script| Entry
+    
+    %% Plugin Internal Flow
+    Entry -->|2. Boot| Router
+    Router -->|3. Render| Page_List
+    Router -->|3. Render| Page_Create
+    
+    %% Data Fetching
+    Page_List -->|Fetch| Services
+    Services == 4. HTTPS Request ==> API_GW
+    
+    %% Talking back to Host
+    Page_Create -->|Notify| Bridge
+    Bridge -.->|5. PostMessage| DOP_Host
+
+    %% Apply Styles
+    class DOP_Host host;
+    class Our_Plugin plugin;
+    class AWS_Cloud cloud;
+  ```
+
 
