@@ -41,3 +41,45 @@ graph TB
     style DopSvc fill:#e8f5e9
     style OSB fill:#fff4e1
 ```
+
+
+```mermaid
+graph TB
+
+subgraph DevOps_Portal
+DOP[DOP Shell]
+end
+
+subgraph iKube2_Integration
+Entry[EntryComponent]
+Router[RouterService]
+Main[MainComponent]
+DopSvc[DopPropertiesService]
+end
+
+subgraph Pages
+Landing[LandingPage]
+Create[CreateProjectPage]
+Delete[DeleteProjectPage]
+end
+
+subgraph Backend
+OSB[OSB API]
+Catalog[GET /catalog]
+Instance[GET /instance/:id]
+Compliance[GET /instance/:id/compliance]
+end
+
+DOP --> Entry
+Entry --> DopSvc
+Entry --> Router
+Router --> Main
+Main --> Landing
+Main --> Create
+Main --> Delete
+
+DopSvc --> OSB
+Landing --> Catalog
+Landing --> Instance
+Create --> Compliance
+```
